@@ -1,59 +1,73 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
+"""
+Ху-трансформер для русских слов.
+Если ввод содержит несколько слов — каждое преобразуется отдельно.
+"""
 
-word = raw_input("Enter word: ")
-uword = word.decode('utf8')
+from typing import List
 
-#print type (uword)
+VOWELS = set("аеёиоуэюыя")
 
-letter = 0
-slogi = []
-range = 0
+V_MAP = {
+    "а": "я",
+    "я": "я",
+    "е": "е",
+    "о": "е",
+    "и": "и",
+    "ё": "ё",
+    "ы": "и",
+    "ю": "ю",
+    "у": "ю",
+    # "э" не задана → дефолт "е"
+}
 
-slovar = [[u"а", u"я"], [u"я", u"я"], [u"е", "е"], [u"о", u"е"], [u"и", u"и"], [u"ё", u"ё"], [u"ы", u"и"], [u"ю", u"ю"], [u"у", u"ю"]]
+
+def split_syllables(word: str) -> List[str]:
+    """Разделяем слово на слоги по гласным (гласная включается в слог)."""
+    chunks: List[str] = []
+    start = 0
+    for i, ch in enumerate(word):
+        if ch.lower() in VOWELS:
+            chunks.append(word[start : i + 1])
+            start = i + 1
+    chunks.append(word[start:])
+    return [c for c in chunks if c]
 
 
-for i in uword:
-    #print type(i)
-    #letter = unicode(i, "utf-8", errors="ignore")
-    #print letter
-    #print type(range)
-    #print type(letter)
-    if i == u"а" or i== u"е" or i== u"ё" or i== u"и" or i== u"о" or i== u"у" or i== u"э" or i== u"ю" or i==u"ы" or i== u"я":
-        slogi.append(uword[range: letter+1])
-        range=letter+1
-    letter +=1
-slogi.append(uword[range:])
+def choose_button(syllable: str) -> str:
+    """Выбираем подходящую гласную для 'ху' по таблице соответствий."""
+    btn = "е"
+    for ch in syllable:
+        m = V_MAP.get(ch.lower())
+        if m:
+            btn = m
+    return btn
 
-sloge = [x for x in slogi if x]
-#print sloge
 
-endword = u"ху"
-endbutton = u"е"
+def hu_transform(word: str) -> str:
+    """Основное преобразование одного слова."""
+    slogs = split_syllables(word)
+    endword = "ху"
 
-if len(sloge) < 4:
-    for l in sloge[0][0:]:
-        for m in slovar:
-            #print m[0]
-            if l==m[0]:
-                endbutton = m[1]
-        #print endbutton
-    endword +=endbutton
-    for k in sloge[1:]:
-        endword = endword + k
-if len(sloge) >3:
-    for l in sloge[1][0:]:
-        for m in slovar:
-            #print m[0]
-            if l==m[0]:
-                endbutton = m[1]
-    #print endbutton
-    #print endword
-    endword +=endbutton
-    for k in sloge[2:]:
-        endword = endword + k
+    if not slogs:
+        return endword
 
-print endword
+    if len(slogs) < 4:
+        endword += choose_button(slogs[0])
+        endword += "".join(slogs[1:])
+    elif len(slogs) > 3:
+        endword += choose_button(slogs[1])
+        endword += "".join(slogs[2:])
+    return endword
 
-#for k in sloge:
-#    print k
 
+if __name__ == "__main__":
+    try:
+        user_input = input("Enter word(s): ").strip()
+    except EOFError:
+        user_input = ""
+
+    # Разделяем строку на слова по пробелам и обрабатываем каждое
+    words = user_input.split()
+    result = [hu_transform(w) for w in words]
+    print(" ".join(result))
