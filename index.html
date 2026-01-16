@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Хуификатор - Интерактивная версия</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        textarea, input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+            resize: vertical;
+        }
+
+        textarea:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 100px;
+        }
+
+        .output-group {
+            margin-top: 20px;
+        }
+
+        .output {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px;
+            min-height: 100px;
+            font-size: 18px;
+            color: #667eea;
+            font-weight: 600;
+            word-wrap: break-word;
+        }
+
+        .output.empty {
+            color: #999;
+            font-style: italic;
+            font-weight: normal;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .info {
+            margin-top: 30px;
+            padding: 15px;
+            background: #f0f4ff;
+            border-radius: 10px;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .info h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎭 Хуификатор</h1>
+        <p class="subtitle">Интерактивная веб-версия трансформера слов</p>
+
+        <div class="input-group">
+            <label for="input">Введите слово или несколько слов:</label>
+            <textarea
+                id="input"
+                placeholder="Например: слово, компьютер, программирование"
+                autofocus
+            ></textarea>
+        </div>
+
+        <button onclick="transform()">Трансформировать</button>
+
+        <div class="output-group">
+            <label>Результат:</label>
+            <div id="output" class="output empty">Результат появится здесь...</div>
+        </div>
+
+        <div class="info">
+            <h3>Как это работает?</h3>
+            <p>Скрипт разбивает слова на слоги и заменяет начало на "ху-" с модифицированной гласной.
+            Для слов с менее чем 4 слогами используется первый слог, для длинных слов - второй.</p>
+        </div>
+    </div>
+
+    <script>
+        const VOWELS = new Set(['а', 'е', 'ё', 'и', 'о', 'у', 'э', 'ю', 'ы', 'я']);
+
+        const V_MAP = {
+            'а': 'я',
+            'я': 'я',
+            'е': 'е',
+            'о': 'е',
+            'и': 'и',
+            'ё': 'ё',
+            'ы': 'и',
+            'ю': 'ю',
+            'у': 'ю'
+        };
+
+        function splitSyllables(word) {
+            const chunks = [];
+            let start = 0;
+
+            for (let i = 0; i < word.length; i++) {
+                if (VOWELS.has(word[i].toLowerCase())) {
+                    chunks.push(word.substring(start, i + 1));
+                    start = i + 1;
+                }
+            }
+
+            if (start < word.length) {
+                chunks.push(word.substring(start));
+            }
+
+            return chunks.filter(c => c.length > 0);
+        }
+
+        function chooseButton(syllable) {
+            let btn = 'е';
+            for (let ch of syllable) {
+                const mapped = V_MAP[ch.toLowerCase()];
+                if (mapped) {
+                    btn = mapped;
+                }
+            }
+            return btn;
+        }
+
+        function huTransform(word) {
+            const slogs = splitSyllables(word);
+            let endword = 'ху';
+
+            if (slogs.length === 0) {
+                return endword;
+            }
+
+            if (slogs.length < 4) {
+                endword += chooseButton(slogs[0]);
+                endword += slogs.slice(1).join('');
+            } else {
+                endword += chooseButton(slogs[1]);
+                endword += slogs.slice(2).join('');
+            }
+
+            return endword;
+        }
+
+        function transform() {
+            const input = document.getElementById('input').value.trim();
+            const output = document.getElementById('output');
+
+            if (!input) {
+                output.textContent = 'Введите хотя бы одно слово...';
+                output.classList.add('empty');
+                return;
+            }
+
+            const words = input.split(/\s+/);
+            const result = words.map(w => huTransform(w)).join(' ');
+
+            output.textContent = result;
+            output.classList.remove('empty');
+        }
+
+        // Enable Enter key to transform (Ctrl+Enter for new line)
+        document.getElementById('input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey) {
+                e.preventDefault();
+                transform();
+            }
+        });
+
+        // Real-time transformation on input
+        document.getElementById('input').addEventListener('input', function() {
+            transform();
+        });
+    </script>
+</body>
+</html>
